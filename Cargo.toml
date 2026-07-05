@@ -1,0 +1,26 @@
+[package]
+name = "Quark"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+chrono = "0.4"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"
+hex = "0.4"
+tokio = { version = "1", features = ["full"] }
+bs58 = "0.5"
+aes-gcm = "0.10"
+argon2 = "0.5"
+axum = "0.7"
+reqwest = { version = "0.12", features = ["json"] }
+
+[dev-dependencies]
+proptest = "=1.0.0"
+
+[lib]
+name = "quark"
+path = "src/lib.rs"
