@@ -22,6 +22,7 @@ Les systèmes PoS classiques lient le pouvoir de validation à la simple détent
 - Adresses encodées en Base58.
 - Transactions signées et vérifiées cryptographiquement.
 - Modèle de compte (balance-based), pas UTXO.
+- Frais de transaction définis par l'émetteur.
 
 ### 3.3 Quarks et Hadrons
 
@@ -34,26 +35,27 @@ Les systèmes PoS classiques lient le pouvoir de validation à la simple détent
 
 ### 3.4 Consensus (Proof-of-Stake)
 
-- Sélection pondérée des validateurs.
-- Poids = somme des valeurs des Hadrons stakés (Proton = 3, Neutron = 2) + 1 (poids de base).
-- Résolution de forks : la chaîne valide la plus longue l'emporte.
+- Sélection pondérée des validateurs, via un tirage combinant le hash du bloc précédent et une seed propre à chaque validateur (mécanisme simplifié type commit-reveal).
+- Poids = somme des valeurs des Hadrons stakés (Proton = 3, Neutron = 2, plafonné à 30 par validateur) + 1 (poids de base).
+- Résolution de forks : la chaîne valide la plus longue l'emporte (vérification de validité avant adoption).
 
 ### 3.5 Émission monétaire
 
 - Récompense de bloc initiale : 1000 QRK.
 - Halving tous les 10 blocs (récompense divisée par 2).
-- Frais de transaction définis par l'émetteur.
 
 ### 3.6 Réseau
 
 - Communication TCP pair-à-pair basique (port par défaut 8080).
 - Diffusion (broadcast) de la chaîne après chaque bloc forgé aux pairs connus.
 - Synchronisation manuelle ou automatique avec vérification de validité avant adoption d'une chaîne reçue.
+- Découverte de pairs basique via l'API (`GET /peers`) au démarrage d'un nœud.
 
 ### 3.7 API
 
 - API HTTP (port 3000) exposant :
   - `GET /chain` — état complet de la blockchain (JSON)
+  - `GET /peers` — liste des pairs connus (JSON)
   - `GET /` — explorateur de blocs basique (HTML)
 
 ### 3.8 Sécurité des wallets
@@ -62,19 +64,24 @@ Les systèmes PoS classiques lient le pouvoir de validation à la simple détent
 - Dérivation de clé par mot de passe via Argon2.
 - Stockage local (fichier `.key`) par adresse.
 
+### 3.9 Tests
+
+- Tests unitaires sur chaque module (bloc, transaction, ledger, wallet, validateur, quark/hadron).
+- Tests property-based (proptest) sur la vérification des transactions.
+
 ## 4. Limites connues
 
-- Pas de découverte automatique de pairs (liste statique).
-- Pas de résistance formelle aux attaques Sybil, 51 %, long-range (PoS).
-- Pas de commit-reveal : le tirage des Quarks et la sélection du validateur sont prévisibles/manipulables par un nœud malveillant.
+- Découverte de pairs basique (un seul point d'entrée, pas de gossip multi-hop).
+- Résistance Sybil partielle (plafond de poids par validateur) ; pas de résistance formelle aux attaques 51 % ou long-range (PoS).
+- Commit-reveal simplifié : le tirage combine hash de bloc et seed de validateur, mais reste manipulable par un validateur qui contrôle sa propre seed.
 - Mempool local, non partagé entre nœuds.
 - Pas d'audit de sécurité externe.
 
 ## 5. Travaux futurs
 
-- VRF ou commit-reveal pour le tirage aléatoire.
+- VRF ou commit-reveal renforcé pour le tirage aléatoire.
 - Propagation P2P du mempool.
-- Découverte de pairs dynamique (gossip).
+- Découverte de pairs dynamique (gossip multi-hop).
 - Audit de sécurité indépendant.
 
 ## 6. Avertissement
