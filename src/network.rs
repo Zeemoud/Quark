@@ -17,7 +17,7 @@ use tower_http::cors::{Any, CorsLayer};
 use crate::wallet::Wallet;
 
 pub async fn start_server(port: u16, blockchain: Arc<Mutex<Blockchain>>, chain_path: String) {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
         .unwrap();
     println!("Écoute sur {}", port);
@@ -96,7 +96,7 @@ pub async fn start_api(
         .route("/chain", get(get_chain))
         .route("/", get(explorer))
         .route("/peers", get(get_peers))
-        .route("/balance/:address", get(get_balance))
+        .route("/balance/{address}", get(get_balance))
         .route("/tx", post(post_tx))
         .route("/wallet", post(post_create_wallet))
         .route("/wallet/load", post(post_load_wallet))
@@ -109,7 +109,7 @@ pub async fn start_api(
                 .allow_methods(Any)
                 .allow_headers(Any),
         );
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
         .unwrap();
     println!("API sur {}", port);
