@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quark Core</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script type="module">
+      import * as ed from "https://esm.sh/@noble/ed25519@2.1.0";
+      import { sha512 } from "https://esm.sh/@noble/hashes@1.4.0/sha512";
+      ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
+      window.ed = ed;
+      window.__cryptoReady = true;
+    </script>
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --panel: #10141d;
+        --panel-2: #151b26;
+        --text: #e8e6e1;
+        --text-dim: #7d8494;
+        --up: #5b8fb9;
+        --down: #b85c38;
+        --gold: #d4af37;
+        --green: #4caf7d;
+        --red: #c9524a;
+        --line: #232a38;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Fraunces", serif;
+        font-size: 14px;
+      }
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 24px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar .logo {
+        padding: 0 24px 24px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 8px;
+      }
+      .sidebar .logo span {
+        color: var(--gold);
+      }
+      .nav-item {
+        padding: 12px 24px;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-left: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .nav-item:hover {
+        color: var(--text);
+        background: var(--panel-2);
+      }
+      .nav-item.active {
+        color: var(--text);
+        border-left-color: var(--gold);
+        background: var(--panel-2);
+      }
+      .sidebar-status {
+        margin-top: auto;
+        padding: 16px 24px;
+        border-top: 1px solid var(--line);
+        font-size: 0.78rem;
+        color: var(--text-dim);
+      }
+      .status-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        margin-right: 6px;
+      }
+      .status-dot.off {
+        background: var(--red);
+      }
+
+      main {
+        padding: 32px 40px;
+        overflow-x: hidden;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        margin-bottom: 28px;
+      }
+
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 20px;
+      }
+      .card .label {
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+      .card .value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        word-break: break-all;
+      }
+      .card .value.small {
+        font-size: 1.1rem;
+      }
+      .card .delta {
+        font-size: 0.78rem;
+        margin-top: 4px;
+        color: var(--text-dim);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .panel h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+
+      .chart-wrap {
+        height: 260px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      th {
+        text-align: left;
+        color: var(--text-dim);
+        font-weight: 500;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      td {
+        padding: 12px 8px;
+        border-bottom: 1px solid var(--line);
+        font-family: "JetBrains Mono", monospace;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .hash {
+        color: var(--text-dim);
+      }
+
+      input,
+      select {
+        width: 100%;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 4px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--gold);
+      }
+      label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+
+      button {
+        background: var(--gold);
+        color: var(--bg);
+        border: none;
+        padding: 11px 22px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      button:hover {
+        opacity: 0.85;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      button.secondary {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+      }
+
+      .form-row {
+        display: flex;
+        gap: 12px;
+      }
+      .form-row > div {
+        flex: 1;
+      }
+
+      .msg {
+        font-size: 0.82rem;
+        padding: 10px 14px;
+        border-radius: 4px;
+        margin-top: 12px;
+        display: none;
+        word-break: break-all;
+      }
+      .msg.ok {
+        background: rgba(76, 175, 125, 0.12);
+        color: var(--green);
+        display: block;
+      }
+      .msg.err {
+        background: rgba(201, 82, 74, 0.12);
+        color: var(--red);
+        display: block;
+      }
+      .msg.warn {
+        background: rgba(212, 175, 55, 0.12);
+        color: var(--gold);
+        display: block;
+      }
+
+      .quark-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .quark-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-family: "JetBrains Mono", monospace;
+        border: 1px solid var(--line);
+      }
+      .q-up {
+        color: var(--up);
+        border-color: var(--up);
+      }
+      .q-down {
+        color: var(--down);
+        border-color: var(--down);
+      }
+
+      .empty {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        padding: 20px 0;
+        text-align: center;
+      }
+
+      .wallet-active {
+        background: var(--panel-2);
+        border: 1px solid var(--gold);
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .wallet-active .addr {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+      }
+      .wallet-active .addr .lbl {
+        color: var(--text-dim);
+        font-size: 0.72rem;
+        display: block;
+        margin-bottom: 2px;
+      }
+      .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        gap: 12px;
+      }
+      .history-item:last-child {
+        border-bottom: none;
+      }
+      .history-item span {
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="sidebar">
+        <div class="logo">QUARK <span>Core</span></div>
+        <a href="index.html" style="text-decoration: none"
+          ><div class="nav-item" style="color: var(--text-dim)">
+            ← Retour
+          </div></a
+        >
+        <div class="nav-item active" data-view="overview">Vue d'ensemble</div>
+        <div class="nav-item" data-view="wallet">Wallet</div>
+        <div class="nav-item" data-view="send">Envoyer</div>
+        <div class="nav-item" data-view="blocks">Blocs</div>
+        <div class="nav-item" data-view="hadrons">Quarks &amp; Hadrons</div>
+        <div class="nav-item" data-view="network">Réseau</div>
+        <div class="sidebar-status">
+          <div>
+            <span class="status-dot" id="statusDot"></span
+            ><span id="statusText">Connexion...</span>
+          </div>
+          <div class="mono" style="margin-top: 6px" id="nodeUrl">
+            127.0.0.1:3000
+          </div>
+        </div>
+      </div>
+
+      <main>
+        <!-- OVERVIEW -->
+        <div class="view active" id="view-overview">
+          <h1>Vue d'ensemble</h1>
+          <div class="subtitle">État actuel du réseau Quark</div>
+
+          <div class="grid-cards">
+            <div class="card">
+              <div class="label">Prix QRK</div>
+              <div class="value">$0.00</div>
+              <div class="delta">Aucun marché actif</div>
+            </div>
+            <div class="card">
+              <div class="label">Hauteur de chaîne</div>
+              <div class="value" id="statBlocks">—</div>
+              <div class="delta">blocs</div>
+            </div>
+            <div class="card">
+              <div class="label">Dernier validateur</div>
+              <div class="value small mono" id="statValidator">—</div>
+            </div>
+            <div class="card">
+              <div class="label">Pairs connectés</div>
+              <div class="value" id="statPeers">—</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>QRK / USD</h2>
+            <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+          </div>
+
+          <div class="panel">
+            <h2>Derniers blocs</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Hash</th>
+                  <th>Validateur</th>
+                  <th>Tx</th>
+                </tr>
+              </thead>
+              <tbody id="overviewBlocks"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WALLET -->
+        <div class="view" id="view-wallet">
+          <h1>Wallet</h1>
+          <div class="subtitle">Créer un wallet ou consulter un solde</div>
+
+          <div class="wallet-active" id="activeWalletBox" style="display: none">
+            <div class="addr">
+              <span class="lbl">Wallet actif</span
+              ><span id="activeWalletAddr"></span>
+            </div>
+            <button class="secondary" onclick="forgetWallet()">
+              Oublier ce wallet
+            </button>
+          </div>
+
+          <div class="panel">
+            <h2>Créer un nouveau wallet</h2>
+            <label>Mot de passe (chiffre la clé côté serveur)</label>
+            <input
+              type="password"
+              id="newWalletPassword"
+              placeholder="Mot de passe"
+            />
+            <button onclick="createWallet()">Créer</button>
+            <div class="msg" id="createWalletMsg"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Charger un wallet existant</h2>
+            <label>Adresse</label>
+            <input
+              type="text"
+              id="loadWalletAddr"
+              placeholder="Adresse Base58..."
+            />
+            <label>Mot de passe</label>
+            <input
+              type="password"
+              id="loadWalletPassword"
+              placeholder="Mot de passe"
+            />
+            <button onclick="loadWallet()">Charger</button>
+            <div class="msg" id="loadWalletMsg"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Consulter un solde</h2>
+            <label>Adresse</label>
+            <input
+              type="text"
+              id="walletAddr"
+              placeholder="Adresse Base58..."
+            />
+            <button onclick="checkBalance()">Vérifier</button>
+            <div class="msg" id="walletMsg"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Historique de tes wallets</h2>
+            <div id="walletHistory"></div>
+          </div>
+
+          <div class="grid-cards" id="walletResult" style="display: none">
+            <div class="card">
+              <div class="label">Solde</div>
+              <div class="value" id="walletBalance">0 QRK</div>
+            </div>
+            <div class="card" style="grid-column: span 2">
+              <div class="label">Quarks détenus</div>
+              <div class="quark-list" id="walletQuarks"></div>
+              <button
+                class="secondary"
+                style="margin-top: 14px"
+                onclick="tryForgeHadron()"
+              >
+                Forger un Hadron (3 premiers quarks)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEND -->
+        <div class="view" id="view-send">
+          <h1>Envoyer une transaction</h1>
+          <div class="subtitle">
+            La transaction est signée directement dans ce navigateur avec la clé
+            du wallet actif
+          </div>
+
+          <div class="panel" id="sendNoWallet">
+            <p style="color: var(--text-dim)">
+              Crée ou charge un wallet dans l'onglet Wallet pour pouvoir envoyer
+              une transaction.
+            </p>
+          </div>
+
+          <div class="panel" id="sendForm" style="display: none">
+            <label>Depuis (wallet actif)</label>
+            <input type="text" id="sendFromDisplay" disabled />
+            <label>Adresse destinataire</label>
+            <input type="text" id="sendTo" placeholder="Adresse Base58..." />
+            <div class="form-row">
+              <div>
+                <label>Montant</label>
+                <input type="number" id="sendAmount" placeholder="0" />
+              </div>
+              <div>
+                <label>Frais</label>
+                <input type="number" id="sendFee" placeholder="0" value="1" />
+              </div>
+            </div>
+            <button onclick="sendTransaction()">Signer et envoyer</button>
+            <div class="msg" id="sendMsg"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Forger un bloc</h2>
+            <p style="color: var(--text-dim); margin-bottom: 14px">
+              Force le nœud à forger un bloc immédiatement (utile en test
+              local).
+            </p>
+            <button class="secondary" onclick="forgeBlock()">
+              Forger un bloc
+            </button>
+            <div class="msg" id="forgeMsg"></div>
+          </div>
+        </div>
+
+        <!-- BLOCKS -->
+        <div class="view" id="view-blocks">
+          <h1>Explorateur de blocs</h1>
+          <div class="subtitle">Chaîne complète récupérée depuis le nœud</div>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Hash</th>
+                  <th>Précédent</th>
+                  <th>Validateur</th>
+                  <th>Tx</th>
+                </tr>
+              </thead>
+              <tbody id="blocksTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- HADRONS -->
+        <div class="view" id="view-hadrons">
+          <h1>Quarks &amp; Hadrons</h1>
+          <div class="subtitle">Rappel des combinaisons valides</div>
+
+          <div class="grid-cards">
+            <div class="card">
+              <div class="label">Proton</div>
+              <div class="value small mono">u + u + d</div>
+              <div class="delta">poids 3</div>
+            </div>
+            <div class="card">
+              <div class="label">Neutron</div>
+              <div class="value small mono">u + d + d</div>
+              <div class="delta">poids 2</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Types de quarks</h2>
+            <div class="quark-list">
+              <span class="quark-pill q-up">Up (+2/3)</span>
+              <span class="quark-pill q-down">Down (−1/3)</span>
+              <span class="quark-pill q-up">Charm (+2/3)</span>
+              <span class="quark-pill q-down">Strange (−1/3)</span>
+              <span class="quark-pill q-up">Top (+2/3)</span>
+              <span class="quark-pill q-down">Bottom (−1/3)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NETWORK -->
+        <div class="view" id="view-network">
+          <h1>Réseau</h1>
+          <div class="subtitle">Pairs connus du nœud</div>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Adresse</th>
+                </tr>
+              </thead>
+              <tbody id="peersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const API = "http://127.0.0.1:3000";
+
+      document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
+        item.addEventListener("click", () => {
+          document
+            .querySelectorAll(".nav-item")
+            .forEach((i) => i.classList.remove("active"));
+          document
+            .querySelectorAll(".view")
+            .forEach((v) => v.classList.remove("active"));
+          item.classList.add("active");
+          document
+            .getElementById("view-" + item.dataset.view)
+            .classList.add("active");
+        });
+      });
+
+      let chain = [];
+      let activeWallet = null; // { address, privateKeyBytes }
+
+      function truncate(s) {
+        if (!s) return "—";
+        return s.length > 16 ? s.slice(0, 8) + "…" + s.slice(-6) : s;
+      }
+
+      async function fetchChain() {
+        try {
+          const res = await fetch(API + "/chain");
+          chain = await res.json();
+          document.getElementById("statusDot").classList.remove("off");
+          document.getElementById("statusText").textContent = "Connecté";
+          renderOverview();
+          renderBlocks();
+        } catch (e) {
+          document.getElementById("statusDot").classList.add("off");
+          document.getElementById("statusText").textContent =
+            "Nœud injoignable";
+        }
+      }
+
+      async function fetchPeers() {
+        try {
+          const res = await fetch(API + "/peers");
+          const peers = await res.json();
+          document.getElementById("statPeers").textContent = peers.length;
+          const tbody = document.getElementById("peersTable");
+          tbody.innerHTML = peers.length
+            ? peers.map((p) => `<tr><td>${p}</td></tr>`).join("")
+            : `<tr><td class="empty">Aucun pair connu</td></tr>`;
+        } catch (e) {
+          document.getElementById("statPeers").textContent = "—";
+        }
+      }
+
+      function renderOverview() {
+        document.getElementById("statBlocks").textContent = chain.length;
+        const last = chain[chain.length - 1];
+        document.getElementById("statValidator").textContent = last
+          ? truncate(last.validator)
+          : "—";
+        const tbody = document.getElementById("overviewBlocks");
+        const recent = [...chain].reverse().slice(0, 5);
+        tbody.innerHTML = recent
+          .map(
+            (b) => `
+    <tr><td>${b.index}</td><td class="hash">${truncate(b.hash)}</td><td>${truncate(b.validator)}</td><td>${b.transactions.length}</td></tr>
+  `,
+          )
+          .join("");
+      }
+
+      function renderBlocks() {
+        const tbody = document.getElementById("blocksTable");
+        const reversed = [...chain].reverse();
+        tbody.innerHTML = reversed
+          .map(
+            (b) => `
+    <tr><td>${b.index}</td><td class="hash">${truncate(b.hash)}</td><td class="hash">${truncate(b.previous_hash)}</td><td>${truncate(b.validator)}</td><td>${b.transactions.length}</td></tr>
+  `,
+          )
+          .join("");
+      }
+
+      function setActiveWallet(address, privateKeyBytes) {
+        activeWallet = { address, privateKeyBytes };
+        document.getElementById("activeWalletBox").style.display = "flex";
+        document.getElementById("activeWalletAddr").textContent = address;
+        document.getElementById("sendNoWallet").style.display = "none";
+        document.getElementById("sendForm").style.display = "block";
+        document.getElementById("sendFromDisplay").value = address;
+        saveToHistory(address);
+        renderHistory();
+      }
+
+      function saveToHistory(address) {
+        const history = JSON.parse(
+          localStorage.getItem("quark_wallet_history") || "[]",
+        );
+        if (!history.includes(address)) {
+          history.unshift(address);
+          localStorage.setItem(
+            "quark_wallet_history",
+            JSON.stringify(history.slice(0, 20)),
+          );
+        }
+      }
+
+      function renderHistory() {
+        const history = JSON.parse(
+          localStorage.getItem("quark_wallet_history") || "[]",
+        );
+        const container = document.getElementById("walletHistory");
+        if (!container) return;
+        container.innerHTML = history.length
+          ? history
+              .map(
+                (a) =>
+                  `<div class="history-item"><span class="mono">${a}</span><button class="secondary" onclick="fillLoadAddr('${a}')">Utiliser</button></div>`,
+              )
+              .join("")
+          : `<div class="empty">Aucun wallet dans l'historique</div>`;
+      }
+
+      function fillLoadAddr(address) {
+        document.getElementById("loadWalletAddr").value = address;
+      }
+
+      function forgetWallet() {
+        activeWallet = null;
+        document.getElementById("activeWalletBox").style.display = "none";
+        document.getElementById("sendNoWallet").style.display = "block";
+        document.getElementById("sendForm").style.display = "none";
+      }
+
+      async function loadWallet() {
+        const address = document.getElementById("loadWalletAddr").value.trim();
+        const password = document.getElementById("loadWalletPassword").value;
+        const msg = document.getElementById("loadWalletMsg");
+        if (!address || !password) {
+          msg.className = "msg err";
+          msg.textContent = "Entre l'adresse et le mot de passe.";
+          return;
+        }
+        try {
+          const res = await fetch(API + "/wallet/load", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address, password }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            const privBytes = hexToBytes(data.private_key_hex);
+            setActiveWallet(address, privBytes);
+            msg.className = "msg ok";
+            msg.textContent = "Wallet chargé.";
+          } else {
+            msg.className = "msg err";
+            msg.textContent = data.error || "Échec du chargement.";
+          }
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent = "Impossible de contacter le nœud.";
+        }
+      }
+
+      async function createWallet() {
+        const password = document.getElementById("newWalletPassword").value;
+        const msg = document.getElementById("createWalletMsg");
+        if (!password) {
+          msg.className = "msg err";
+          msg.textContent = "Entre un mot de passe.";
+          return;
+        }
+        try {
+          const res = await fetch(API + "/wallet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+          });
+          const data = await res.json();
+          const privBytes = hexToBytes(data.private_key_hex);
+          setActiveWallet(data.address, privBytes);
+          msg.className = "msg ok";
+          msg.textContent = `Wallet créé : ${data.address}. Solde initial : 1000 QRK.`;
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent = "Erreur : impossible de contacter le nœud.";
+        }
+      }
+
+      function hexToBytes(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < bytes.length; i++)
+          bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+        return bytes;
+      }
+
+      async function checkBalance() {
+        const addr = document.getElementById("walletAddr").value.trim();
+        const msg = document.getElementById("walletMsg");
+        msg.className = "msg";
+        if (!addr) {
+          msg.className = "msg err";
+          msg.textContent = "Entre une adresse.";
+          return;
+        }
+        try {
+          const res = await fetch(API + "/balance/" + addr);
+          const data = await res.json();
+          document.getElementById("walletBalance").textContent =
+            data.balance + " QRK";
+          const quarksDiv = document.getElementById("walletQuarks");
+          quarksDiv.innerHTML = data.quarks.length
+            ? data.quarks
+                .map(
+                  (q) =>
+                    `<span class="quark-pill ${["Up", "Charm", "Top"].includes(q) ? "q-up" : "q-down"}">${q}</span>`,
+                )
+                .join("")
+            : `<span class="empty">Aucun quark</span>`;
+          document.getElementById("walletResult").style.display = "grid";
+          document.getElementById("walletResult").dataset.addr = addr;
+          msg.textContent = "";
+          msg.className = "msg";
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent = "Impossible de contacter le nœud.";
+          document.getElementById("walletResult").style.display = "none";
+        }
+      }
+
+      async function tryForgeHadron() {
+        const addr = document.getElementById("walletResult").dataset.addr;
+        if (!addr) return;
+        try {
+          const res = await fetch(API + "/forge-hadron", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: addr }),
+          });
+          const data = await res.json();
+          alert(
+            data.ok ? `Hadron forgé : ${data.kind}` : `Échec : ${data.error}`,
+          );
+          checkBalance();
+        } catch (e) {
+          alert("Impossible de contacter le nœud.");
+        }
+      }
+
+      async function sendTransaction() {
+        const msg = document.getElementById("sendMsg");
+        if (!activeWallet) {
+          msg.className = "msg err";
+          msg.textContent = "Aucun wallet actif.";
+          return;
+        }
+        const to = document.getElementById("sendTo").value.trim();
+        const amount = parseInt(
+          document.getElementById("sendAmount").value || "0",
+        );
+        const fee = parseInt(document.getElementById("sendFee").value || "0");
+
+        if (!to || !amount) {
+          msg.className = "msg err";
+          msg.textContent = "Remplis l'adresse et le montant.";
+          return;
+        }
+
+        try {
+          const from = activeWallet.address;
+          const message = `${from}${to}${amount}${fee}`;
+          const messageBytes = new TextEncoder().encode(message);
+          const signature = await window.ed.signAsync(
+            messageBytes,
+            activeWallet.privateKeyBytes,
+          );
+
+          const tx = {
+            from,
+            to,
+            amount,
+            fee,
+            signature: Array.from(signature),
+          };
+
+          const res = await fetch(API + "/tx", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(tx),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            msg.className = "msg ok";
+            msg.textContent = "Transaction envoyée et bloc forgé.";
+            fetchChain();
+          } else {
+            msg.className = "msg err";
+            msg.textContent = "Erreur : " + (data.error || "inconnue");
+          }
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent =
+            "Erreur de signature ou de connexion : " + e.message;
+        }
+      }
+
+      async function forgeBlock() {
+        const msg = document.getElementById("forgeMsg");
+        try {
+          const res = await fetch(API + "/forge-block", { method: "POST" });
+          const data = await res.json();
+          msg.className = "msg ok";
+          msg.textContent = `Bloc forgé. Hauteur : ${data.height}.`;
+          fetchChain();
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent = "Impossible de contacter le nœud.";
+        }
+      }
+
+      window.addEventListener("load", () => {
+        const ctx = document.getElementById("priceChart").getContext("2d");
+        const labels = Array.from({ length: 30 }, (_, i) => `J-${29 - i}`);
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "QRK/USD",
+                data: labels.map(() => 0),
+                borderColor: "#D4AF37",
+                backgroundColor: "rgba(212,175,55,0.08)",
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true,
+                tension: 0.3,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                grid: { color: "#232a38" },
+                ticks: {
+                  color: "#7d8494",
+                  font: { family: "JetBrains Mono", size: 10 },
+                },
+              },
+              y: {
+                min: -1,
+                max: 1,
+                grid: { color: "#232a38" },
+                ticks: {
+                  color: "#7d8494",
+                  font: { family: "JetBrains Mono", size: 10 },
+                  callback: (v) => "$" + v.toFixed(2),
+                },
+              },
+            },
+          },
+        });
+      });
+
+      fetchChain();
+      fetchPeers();
+      renderHistory();
+      setInterval(fetchChain, 5000);
+      setInterval(fetchPeers, 5000);
+    </script>
+  </body>
+</html>

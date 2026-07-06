@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quark (QRK)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --bg-soft: #10141d;
+        --text: #e8e6e1;
+        --text-dim: #8b93a3;
+        --up: #5b8fb9;
+        --down: #b85c38;
+        --gold: #d4af37;
+        --line: #232a38;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Fraunces", serif;
+        line-height: 1.5;
+        overflow-x: hidden;
+      }
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 48px;
+        z-index: 100;
+        background: linear-gradient(
+          to bottom,
+          rgba(11, 14, 20, 0.98) 60%,
+          transparent
+        );
+      }
+      nav .logo {
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: 0.02em;
+      }
+      nav .logo span {
+        color: var(--gold);
+      }
+      nav a {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        margin-left: 32px;
+        transition: color 0.2s;
+      }
+      nav a:hover {
+        color: var(--text);
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0 24px;
+        position: relative;
+      }
+      .hero-formula {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        letter-spacing: 0.15em;
+        margin-bottom: 32px;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.1s;
+      }
+      .hero h1 {
+        font-size: clamp(3.5rem, 10vw, 8rem);
+        font-weight: 300;
+        letter-spacing: -0.02em;
+        line-height: 0.95;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.3s;
+      }
+      .hero h1 .accent {
+        font-weight: 600;
+        background: linear-gradient(120deg, var(--up), var(--gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p {
+        max-width: 560px;
+        margin-top: 28px;
+        color: var(--text-dim);
+        font-size: 1.15rem;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.5s;
+      }
+      .hero-cta {
+        margin-top: 40px;
+        display: flex;
+        gap: 16px;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.7s;
+      }
+      .btn {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        padding: 14px 28px;
+        border-radius: 2px;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--line);
+      }
+      .btn-primary {
+        background: var(--text);
+        color: var(--bg);
+        border-color: var(--text);
+      }
+      .btn-primary:hover {
+        background: var(--gold);
+        border-color: var(--gold);
+      }
+      .btn-secondary {
+        color: var(--text);
+      }
+      .btn-secondary:hover {
+        border-color: var(--text-dim);
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .scroll-hint {
+        position: absolute;
+        bottom: 40px;
+        color: var(--text-dim);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        animation: bob 2s ease-in-out infinite;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(6px);
+        }
+      }
+
+      section {
+        padding: 140px 48px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .section-label {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--gold);
+        font-size: 0.8rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 500;
+        max-width: 700px;
+        margin-bottom: 24px;
+      }
+      .section-desc {
+        color: var(--text-dim);
+        max-width: 600px;
+        font-size: 1.05rem;
+      }
+
+      .quark-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1px;
+        background: var(--line);
+        margin-top: 64px;
+        border: 1px solid var(--line);
+      }
+      @media (max-width: 900px) {
+        .quark-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 500px) {
+        .quark-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .quark-card {
+        background: var(--bg);
+        padding: 32px 28px;
+        transition: background 0.3s;
+      }
+      .quark-card:hover {
+        background: var(--bg-soft);
+      }
+      .quark-symbol {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      .quark-up .quark-symbol {
+        color: var(--up);
+      }
+      .quark-down .quark-symbol {
+        color: var(--down);
+      }
+      .quark-name {
+        font-size: 1.15rem;
+        margin-bottom: 8px;
+      }
+      .quark-desc {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+      }
+
+      .hadron-section {
+        background: var(--bg-soft);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .hadron-demo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 48px;
+        margin-top: 64px;
+      }
+      .hadron-card {
+        flex: 1;
+        min-width: 280px;
+        padding: 40px;
+        border: 1px solid var(--line);
+        position: relative;
+      }
+      .hadron-card h3 {
+        font-size: 1.4rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+      }
+      .hadron-formula {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 1.3rem;
+        margin-bottom: 24px;
+      }
+      .q-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .q-tag.u {
+        background: rgba(91, 143, 185, 0.15);
+        color: var(--up);
+        border: 1px solid var(--up);
+      }
+      .q-tag.d {
+        background: rgba(184, 92, 56, 0.15);
+        color: var(--down);
+        border: 1px solid var(--down);
+      }
+      .hadron-card p {
+        color: var(--text-dim);
+        font-size: 0.95rem;
+      }
+
+      .arch-list {
+        margin-top: 56px;
+        border-top: 1px solid var(--line);
+      }
+      .arch-item {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 32px;
+        padding: 28px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .arch-item .label {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--gold);
+        font-size: 0.85rem;
+      }
+      .arch-item .value {
+        color: var(--text-dim);
+        font-size: 1rem;
+      }
+      .arch-item .value strong {
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      footer {
+        padding: 64px 48px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 24px;
+      }
+      footer .mono {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+      }
+      footer a {
+        color: var(--text);
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: var(--gold);
+      }
+
+      .warning {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        max-width: 600px;
+        margin-top: 12px;
+        border-left: 2px solid var(--down);
+        padding-left: 16px;
+      }
+
+      @media (max-width: 640px) {
+        nav {
+          padding: 20px 24px;
+        }
+        nav a {
+          margin-left: 16px;
+          font-size: 0.75rem;
+        }
+        section {
+          padding: 90px 24px;
+        }
+        .arch-item {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">QUARK <span>QRK</span></div>
+      <div>
+        <a href="#protocole">Protocole</a>
+        <a href="#hadrons">Hadrons</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="https://github.com/Zeemoud/Quark" target="_blank">GitHub</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-formula mono">uud → proton · udd → neutron</div>
+      <h1>Une monnaie <br /><span class="accent">subatomique.</span></h1>
+      <p>
+        Quark (QRK) est un protocole Proof-of-Stake où la sécurité du réseau
+        naît de la combinaison de particules élémentaires — pas de la simple
+        détention de jetons.
+      </p>
+      <div class="hero-cta">
+        <a href="#protocole" class="btn btn-primary">Découvrir le protocole</a>
+        <a href="dashboard.html" class="btn btn-secondary"
+          >Ouvrir le dashboard</a
+        >
+      </div>
+      <div class="scroll-hint mono">↓ scroll</div>
+    </section>
+
+    <section id="protocole">
+      <div class="section-label">01 — Les particules</div>
+      <h2 class="section-title">Six quarks, une économie.</h2>
+      <p class="section-desc">
+        Chaque bloc validé distribue trois quarks aléatoires. Assemblés dans le
+        bon ordre, ils deviennent des Hadrons : des actifs qui augmentent le
+        poids de validation de leur détenteur.
+      </p>
+
+      <div class="quark-grid">
+        <div class="quark-card quark-up">
+          <div class="quark-symbol">u</div>
+          <div class="quark-name">Up</div>
+          <div class="quark-desc">charge +2/3</div>
+        </div>
+        <div class="quark-card quark-down">
+          <div class="quark-symbol">d</div>
+          <div class="quark-name">Down</div>
+          <div class="quark-desc">charge −1/3</div>
+        </div>
+        <div class="quark-card quark-up">
+          <div class="quark-symbol">c</div>
+          <div class="quark-name">Charm</div>
+          <div class="quark-desc">charge +2/3</div>
+        </div>
+        <div class="quark-card quark-down">
+          <div class="quark-symbol">s</div>
+          <div class="quark-name">Strange</div>
+          <div class="quark-desc">charge −1/3</div>
+        </div>
+        <div class="quark-card quark-up">
+          <div class="quark-symbol">t</div>
+          <div class="quark-name">Top</div>
+          <div class="quark-desc">charge +2/3</div>
+        </div>
+        <div class="quark-card quark-down">
+          <div class="quark-symbol">b</div>
+          <div class="quark-name">Bottom</div>
+          <div class="quark-desc">charge −1/3</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="hadrons" class="hadron-section">
+      <div class="section-label">02 — La fusion</div>
+      <h2 class="section-title">Les Hadrons pèsent sur le consensus.</h2>
+      <p class="section-desc">
+        Trois quarks compatibles peuvent être combinés en un Hadron. Sa rareté
+        détermine le poids qu'il apporte à son détenteur lors de la sélection
+        des validateurs.
+      </p>
+
+      <div class="hadron-demo">
+        <div class="hadron-card">
+          <h3>Proton</h3>
+          <div class="hadron-formula">
+            <span class="q-tag u">u</span>
+            <span class="q-tag u">u</span>
+            <span class="q-tag d">d</span>
+            <span style="color: var(--text-dim)">→</span>
+            <span style="color: var(--gold)">poids 3</span>
+          </div>
+          <p>
+            La combinaison la plus recherchée. Elle triple la probabilité d'être
+            choisi pour forger le bloc suivant.
+          </p>
+        </div>
+        <div class="hadron-card">
+          <h3>Neutron</h3>
+          <div class="hadron-formula">
+            <span class="q-tag u">u</span>
+            <span class="q-tag d">d</span>
+            <span class="q-tag d">d</span>
+            <span style="color: var(--text-dim)">→</span>
+            <span style="color: var(--gold)">poids 2</span>
+          </div>
+          <p>
+            Plus commune, elle double le poids de validation — un socle stable
+            pour bâtir une stratégie de stake.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-label">03 — Architecture</div>
+      <h2 class="section-title">Ce qui fait tourner le réseau.</h2>
+
+      <div class="arch-list">
+        <div class="arch-item">
+          <div class="label mono">CONSENSUS</div>
+          <div class="value">
+            Proof-of-Stake pondéré par les Hadrons stakés, tirage combinant
+            <strong>hash du bloc précédent</strong> et seed de validateur.
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="label mono">COMPTES</div>
+          <div class="value">
+            Clés <strong>ed25519</strong>, adresses encodées en
+            <strong>Base58</strong>, wallets chiffrés en AES-256-GCM.
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="label mono">ÉMISSION</div>
+          <div class="value">
+            <strong>1000 QRK</strong> par bloc, halving tous les
+            <strong>10 blocs</strong>.
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="label mono">RÉSEAU</div>
+          <div class="value">
+            Nœuds P2P en TCP, résolution de forks par
+            <strong>chaîne valide la plus longue</strong>, découverte de pairs
+            via API.
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="label mono">API</div>
+          <div class="value">
+            <span class="mono">GET /chain</span>,
+            <span class="mono">GET /peers</span>, explorateur de blocs intégré.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>
+        <div class="mono">QUARK — QRK</div>
+        <div class="warning">
+          Projet expérimental et pédagogique, non audité. À ne pas utiliser pour
+          stocker de la valeur réelle.
+        </div>
+      </div>
+      <div>
+        <a href="https://github.com/Zeemoud/Quark" target="_blank" class="mono"
+          >GitHub →</a
+        >
+      </div>
+    </footer>
+  </body>
+</html>
