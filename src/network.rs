@@ -77,6 +77,7 @@ pub struct ApiState {
     pub peers: Arc<Mutex<Vec<String>>>,
     pub ledger: Arc<Mutex<Ledger>>,
     pub validators: Arc<Mutex<Vec<Validator>>>,
+    pub mempool: Arc<Mutex<Vec<Transaction>>>,
 }
 
 pub async fn start_api(
@@ -85,12 +86,14 @@ pub async fn start_api(
     peers: Arc<Mutex<Vec<String>>>,
     ledger: Arc<Mutex<Ledger>>,
     validators: Arc<Mutex<Vec<Validator>>>,
+    mempool: Arc<Mutex<Vec<Transaction>>>,
 ) {
     let state = ApiState {
         blockchain,
         peers,
         ledger,
         validators,
+        mempool,
     };
     let app = Router::new()
         .route("/chain", get(get_chain))
@@ -98,6 +101,7 @@ pub async fn start_api(
         .route("/peers", get(get_peers))
         .route("/balance/:address", get(get_balance))
         .route("/tx", post(post_tx))
+        .route("/mempool", get(get_mempool))
         .route("/wallet", post(post_create_wallet))
         .route("/wallet/load", post(post_load_wallet))
         .route("/forge-block", post(post_forge_block))
@@ -115,6 +119,10 @@ pub async fn start_api(
         .unwrap();
     println!("API sur {}", port);
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn get_mempool(State(state): State<ApiState>) -> Json<Vec<Transaction>> {
+    Json(state.mempool.lock().await.clone())
 }
 
 async fn get_chain(State(state): State<ApiState>) -> Json<Vec<Block>> {
@@ -162,11 +170,11 @@ async fn post_tx(
             Json(serde_json::json!({"ok": false, "error": "signature invalide"})),
         );
     }
-    let mut bc = state.blockchain.lock().await;
-    let mut ledger = state.ledger.lock().await;
-    let mut validators = state.validators.lock().await;
-    bc.add_block(vec![tx], &mut validators, &mut ledger);
-    (StatusCode::OK, Json(serde_json::json!({"ok": true})))
+    state.mempool.lock().await.push(tx);
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({"ok": true, "mempool": true})),
+    )
 }
 
 async fn explorer(State(state): State<ApiState>) -> axum::response::Html<String> {
@@ -252,7 +260,8 @@ async fn post_forge_block(State(state): State<ApiState>) -> Json<serde_json::Val
     let mut bc = state.blockchain.lock().await;
     let mut ledger = state.ledger.lock().await;
     let mut validators = state.validators.lock().await;
-    bc.add_block(vec![], &mut validators, &mut ledger);
+    let txs = std::mem::take(&mut *state.mempool.lock().await);
+    bc.add_block(txs, &mut validators, &mut ledger);
     Json(serde_json::json!({"ok": true, "height": bc.chain.len()}))
 }
 
