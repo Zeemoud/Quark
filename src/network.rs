@@ -125,6 +125,7 @@ pub async fn start_api(
         .route("/peers", get(get_peers))
         .route("/balance/:address", get(get_balance))
         .route("/tx", post(post_tx))
+        .route("/tx-relay", post(post_tx_relay))
         .route("/mempool", get(get_mempool))
         .route("/wallet", post(post_create_wallet))
         .route("/wallet/load", post(post_load_wallet))
@@ -194,11 +195,31 @@ async fn post_tx(
             Json(serde_json::json!({"ok": false, "error": "signature invalide"})),
         );
     }
-    state.mempool.lock().await.push(tx);
+    state.mempool.lock().await.push(tx.clone());
+
+    let peers = state.peers.lock().await.clone();
+    tokio::spawn(async move {
+        for peer in peers {
+            let url = format!("http://{}/tx-relay", peer);
+            let _ = reqwest::Client::new().post(&url).json(&tx).send().await;
+        }
+    });
+
     (
         StatusCode::OK,
         Json(serde_json::json!({"ok": true, "mempool": true})),
     )
+}
+
+async fn post_tx_relay(State(state): State<ApiState>, Json(tx): Json<Transaction>) -> StatusCode {
+    if !tx.verify() {
+        return StatusCode::BAD_REQUEST;
+    }
+    let mut mempool = state.mempool.lock().await;
+    if !mempool.iter().any(|t| t.signature == tx.signature) {
+        mempool.push(tx);
+    }
+    StatusCode::OK
 }
 
 async fn explorer(State(state): State<ApiState>) -> axum::response::Html<String> {
