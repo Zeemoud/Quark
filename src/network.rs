@@ -96,7 +96,7 @@ pub async fn start_api(
         .route("/chain", get(get_chain))
         .route("/", get(explorer))
         .route("/peers", get(get_peers))
-        .route("/balance/{:address", get(get_balance))
+        .route("/balance/:address", get(get_balance))
         .route("/tx", post(post_tx))
         .route("/wallet", post(post_create_wallet))
         .route("/wallet/load", post(post_load_wallet))
