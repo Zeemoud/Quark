@@ -489,6 +489,13 @@
 
           <div class="panel">
             <h2>Historique de tes wallets</h2>
+            <button
+              class="secondary"
+              onclick="clearHistory()"
+              style="margin-bottom: 14px"
+            >
+              Vider l'historique
+            </button>
             <div id="walletHistory"></div>
           </div>
 
@@ -753,6 +760,11 @@
 
       function fillLoadAddr(address) {
         document.getElementById("loadWalletAddr").value = address;
+      }
+
+      function clearHistory() {
+        localStorage.removeItem("quark_wallet_history");
+        renderHistory();
       }
 
       function forgetWallet() {
