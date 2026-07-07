@@ -71,6 +71,30 @@ pub async fn fetch_peers(addr: &str) -> Option<Vec<String>> {
     resp.json::<Vec<String>>().await.ok()
 }
 
+pub async fn discover_peers(seed: &str, max_hops: u8) -> Vec<String> {
+    let mut known: Vec<String> = vec![seed.to_string()];
+    let mut frontier: Vec<String> = vec![seed.to_string()];
+
+    for _ in 0..max_hops {
+        let mut next_frontier = vec![];
+        for peer in &frontier {
+            if let Some(discovered) = fetch_peers(peer).await {
+                for p in discovered {
+                    if !known.contains(&p) {
+                        known.push(p.clone());
+                        next_frontier.push(p);
+                    }
+                }
+            }
+        }
+        if next_frontier.is_empty() {
+            break;
+        }
+        frontier = next_frontier;
+    }
+    known
+}
+
 #[derive(Clone)]
 pub struct ApiState {
     pub blockchain: Arc<Mutex<Blockchain>>,

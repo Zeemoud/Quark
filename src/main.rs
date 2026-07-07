@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 
 use block::Blockchain;
 use ledger::Ledger;
-use network::{fetch_peers, start_api, start_server};
+use network::{discover_peers, start_api, start_server};
 use transaction::Transaction;
 use validator::Validator;
 
@@ -23,11 +23,10 @@ async fn main() {
     let mempool: Arc<Mutex<Vec<Transaction>>> = Arc::new(Mutex::new(vec![]));
 
     let mut peers: Vec<String> = vec!["127.0.0.1:8081".to_string()];
-    if let Some(discovered) = fetch_peers("127.0.0.1:8081").await {
-        for p in discovered {
-            if !peers.contains(&p) {
-                peers.push(p);
-            }
+    let discovered = discover_peers("127.0.0.1:8081", 3).await;
+    for p in discovered {
+        if !peers.contains(&p) {
+            peers.push(p);
         }
     }
 
