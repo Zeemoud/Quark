@@ -126,7 +126,6 @@ pub async fn start_api(
         GovernorConfigBuilder::default()
             .per_second(2)
             .burst_size(10)
-            .use_headers()
             .finish()
             .unwrap(),
     );
@@ -158,7 +157,12 @@ pub async fn start_api(
         .await
         .unwrap();
     println!("API sur {}", port);
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }
 
 async fn get_mempool(State(state): State<ApiState>) -> Json<Vec<Transaction>> {
