@@ -488,14 +488,24 @@
           </div>
 
           <div class="panel">
-            <h2>Historique de tes wallets</h2>
-            <button
-              class="secondary"
-              onclick="clearHistory()"
-              style="margin-bottom: 14px"
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+              "
             >
-              Vider l'historique
-            </button>
+              <h2 style="margin-bottom: 0">Historique de tes wallets</h2>
+              <button
+                class="secondary"
+                id="clearHistoryBtn"
+                onclick="clearHistory()"
+                style="display: none"
+              >
+                Vider l'historique
+              </button>
+            </div>
             <div id="walletHistory"></div>
           </div>
 
@@ -748,6 +758,8 @@
         );
         const container = document.getElementById("walletHistory");
         if (!container) return;
+        document.getElementById("clearHistoryBtn").style.display =
+          history.length ? "block" : "none";
         container.innerHTML = history.length
           ? history
               .map(
