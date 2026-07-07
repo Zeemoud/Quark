@@ -433,16 +433,18 @@
               <span class="lbl">Wallet actif</span
               ><span id="activeWalletAddr"></span>
             </div>
-            <button class="secondary" onclick="forgetWallet()">
-              Oublier ce wallet
-            </button>
-            <button
-              class="secondary"
-              onclick="deleteWallet()"
-              style="color: var(--red); border-color: var(--red)"
-            >
-              Supprimer ce wallet
-            </button>
+            <div style="display: flex; gap: 8px">
+              <button class="secondary" onclick="forgetWallet()">
+                Oublier ce wallet
+              </button>
+              <button
+                class="secondary"
+                onclick="deleteWallet()"
+                style="color: var(--red); border-color: var(--red)"
+              >
+                Supprimer ce wallet
+              </button>
+            </div>
           </div>
 
           <div class="panel">
