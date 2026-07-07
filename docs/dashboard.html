@@ -811,6 +811,10 @@
             );
             renderHistory();
             forgetWallet();
+            document.getElementById("createWalletMsg").className = "msg";
+            document.getElementById("createWalletMsg").textContent = "";
+            document.getElementById("loadWalletMsg").className = "msg";
+            document.getElementById("loadWalletMsg").textContent = "";
             alert("Wallet supprimé.");
           } else {
             alert(data.error || "Échec de la suppression.");
