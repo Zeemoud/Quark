@@ -126,6 +126,7 @@ pub async fn start_api(
         GovernorConfigBuilder::default()
             .per_second(2)
             .burst_size(10)
+            .use_headers()
             .finish()
             .unwrap(),
     );
