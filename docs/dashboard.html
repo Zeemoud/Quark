@@ -436,6 +436,13 @@
             <button class="secondary" onclick="forgetWallet()">
               Oublier ce wallet
             </button>
+            <button
+              class="secondary"
+              onclick="deleteWallet()"
+              style="color: var(--red); border-color: var(--red)"
+            >
+              Supprimer ce wallet
+            </button>
           </div>
 
           <div class="panel">
@@ -753,6 +760,38 @@
         document.getElementById("activeWalletBox").style.display = "none";
         document.getElementById("sendNoWallet").style.display = "block";
         document.getElementById("sendForm").style.display = "none";
+      }
+
+      async function deleteWallet() {
+        if (!activeWallet) return;
+        const password = prompt(
+          "Confirme ton mot de passe pour supprimer définitivement ce wallet :",
+        );
+        if (!password) return;
+        try {
+          const res = await fetch(API + "/wallet/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: activeWallet.address, password }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            const history = JSON.parse(
+              localStorage.getItem("quark_wallet_history") || "[]",
+            );
+            localStorage.setItem(
+              "quark_wallet_history",
+              JSON.stringify(history.filter((a) => a !== activeWallet.address)),
+            );
+            renderHistory();
+            forgetWallet();
+            alert("Wallet supprimé.");
+          } else {
+            alert(data.error || "Échec de la suppression.");
+          }
+        } catch (e) {
+          alert("Impossible de contacter le nœud.");
+        }
       }
 
       async function loadWallet() {

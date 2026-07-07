@@ -102,6 +102,7 @@ pub async fn start_api(
         .route("/wallet/load", post(post_load_wallet))
         .route("/forge-block", post(post_forge_block))
         .route("/forge-hadron", post(post_forge_hadron))
+        .route("/wallet/delete", post(post_delete_wallet))
         .with_state(state)
         .layer(
             CorsLayer::new()
@@ -292,4 +293,33 @@ async fn post_forge_hadron(
             Json(serde_json::json!({"ok": false, "error": "combinaison invalide, quarks perdus"})),
         ),
     }
+}
+
+#[derive(serde::Deserialize)]
+pub struct DeleteWalletRequest {
+    pub address: String,
+    pub password: String,
+}
+
+async fn post_delete_wallet(
+    State(state): State<ApiState>,
+    Json(req): Json<DeleteWalletRequest>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let path = format!("wallets/{}.key", req.address);
+    if Wallet::load_encrypted(&path, &req.password).is_none() {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(
+                serde_json::json!({"ok": false, "error": "mot de passe incorrect ou wallet introuvable"}),
+            ),
+        );
+    }
+    std::fs::remove_file(&path).ok();
+    state.ledger.lock().await.balances.remove(&req.address);
+    state
+        .validators
+        .lock()
+        .await
+        .retain(|v| v.address != req.address);
+    (StatusCode::OK, Json(serde_json::json!({"ok": true})))
 }
