@@ -139,12 +139,7 @@ mod tests {
     fn add_block_increases_length() {
         let mut bc = Blockchain::new();
         let mut ledger = Ledger::new();
-        let mut validators = vec![Validator {
-            address: "v1".into(),
-            staked_hadrons: vec![],
-            quarks_reward: vec![],
-            seed: 42,
-        }];
+        let mut validators = vec![Validator::new("v1".into(), 42)];
         bc.add_block(vec![], &mut validators, &mut ledger);
         assert_eq!(bc.chain.len(), 2);
         assert!(bc.is_valid());
@@ -154,12 +149,7 @@ mod tests {
     fn tampered_chain_is_invalid() {
         let mut bc = Blockchain::new();
         let mut ledger = Ledger::new();
-        let mut validators = vec![Validator {
-            address: "v1".into(),
-            staked_hadrons: vec![],
-            quarks_reward: vec![],
-            seed: 42,
-        }];
+        let mut validators = vec![Validator::new("v1".into(), 42)];
         bc.add_block(vec![], &mut validators, &mut ledger);
         bc.chain[1].previous_hash = "fake".to_string();
         assert!(!bc.is_valid());

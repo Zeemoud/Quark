@@ -260,12 +260,11 @@ async fn post_create_wallet(
         .await
         .balances
         .insert(addr.clone(), 1000);
-    state.validators.lock().await.push(Validator {
-        address: addr.clone(),
-        staked_hadrons: vec![],
-        quarks_reward: vec![],
-        seed: rand::random(),
-    });
+    state
+        .validators
+        .lock()
+        .await
+        .push(Validator::new(addr.clone(), rand::random()));
 
     let private_key_hex = hex::encode(wallet.signing_key.to_bytes());
     Json(CreateWalletResponse {
