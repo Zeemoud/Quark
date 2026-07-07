@@ -95,6 +95,8 @@ pub async fn discover_peers(seed: &str, max_hops: u8) -> Vec<String> {
     known
 }
 
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
+
 #[derive(Clone)]
 pub struct ApiState {
     pub blockchain: Arc<Mutex<Blockchain>>,
@@ -119,6 +121,15 @@ pub async fn start_api(
         validators,
         mempool,
     };
+
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(2)
+            .burst_size(10)
+            .finish()
+            .unwrap(),
+    );
+
     let app = Router::new()
         .route("/chain", get(get_chain))
         .route("/", get(explorer))
@@ -133,6 +144,9 @@ pub async fn start_api(
         .route("/forge-hadron", post(post_forge_hadron))
         .route("/wallet/delete", post(post_delete_wallet))
         .with_state(state)
+        .layer(GovernorLayer {
+            config: governor_conf,
+        })
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
